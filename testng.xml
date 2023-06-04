@@ -1,0 +1,23 @@
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd">
+<suite name="Yummly automation" parallel="tests" thread-count="2">
+
+    <listeners>
+        <listener class-name="com.yummly.listeners.AnnotationTransformer"/>
+        <listener class-name="com.yummly.listeners.TestListener"/>
+    </listeners>
+
+    <test name="Yummly ios automation">
+        <parameter name="platform" value="ios"/>
+        <classes>
+            <class name="com.yummly.ShopIngredientsTest"/>
+        </classes>
+    </test>
+    <test name="Yummly android automation">
+        <parameter name="platform" value="android"/>
+        <classes>
+            <class name="com.yummly.ShopIngredientsTest"/>
+        </classes>
+    </test>
+    <listeners>
+    </listeners>
+</suite>

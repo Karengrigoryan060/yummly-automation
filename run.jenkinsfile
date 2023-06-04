@@ -1,0 +1,44 @@
+pipeline {
+    agent { label 'master' }
+    tools { maven 'maven-latest' }
+    options {
+        timestamps()
+    }
+    parameters {
+        gitParameter branchFilter: 'origin/(.*)', defaultValue: 'master', description: 'Branch of Yummly web automation repo', selectedValue: 'DEFAULT', name: 'Branch', type: 'PT_BRANCH'
+        string(name: 'androidAppPath', defaultValue: 'src/main/resources/com.yummly.android.apk', description: 'Android app path')
+        string(name: 'iosAppPath', defaultValue: 'src/main/resources/IntegrationApp.zip', description: 'iOS app path')
+        string(name: 'androidDeviceUdid', defaultValue: 'c7c8acb79806', description: 'android device UDID')
+        string(name: 'iosDeviceUdid', defaultValue: 'd09f999236db50393333e00df1583b4c0a4846d6', description: 'iOS device UDID')
+        string(name: 'elementWaitTimeout', defaultValue: '20', description: 'Wait for element timeout')
+        string(name: 'retryCount', defaultValue: '2', description: 'Retry Count')
+    }
+    stages {
+        stage('Git checkout') {
+            steps {
+                checkout([$class: 'GitSCM', branches: [[name: Branch]], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: '', url: '']]])
+                script {
+                    currentBuild.displayName = Branch
+                    currentBuild.description = "TestRail run ID -> $TestrailRunId"
+                }
+            }
+        }
+        stage('Build') {
+            steps {
+                sh 'mvn -DskipTests clean verify'
+            }
+        }
+        stage('Test') {
+            steps {
+                sh 'mvn failsafe:integration-test -Dandroid.app.path=${androidAppPath} -Dandroid.device.udid=${androidDeviceUdid} -Dios.app.path=${iosAppPath} -Dios.device.udid=${iosDeviceUdid} -Delement.wait.timeout=${elementWaitTimeout} -Dretry.count=${retryCount}'
+            }
+        }
+    }
+    post {
+        always {
+            script {
+                allure includeProperties: false, jdk: '', results: [[path: 'yummly-automation/allure-results']]
+            }
+        }
+    }
+}
